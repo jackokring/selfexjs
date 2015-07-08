@@ -1,0 +1,14 @@
+{
+  "name": "selfexjs",
+  "version": "1.0.1",
+  "description": "Creates a self extracting JS string from a string of a HTML, or JS file. This extracts on the client when included as a script.",
+  "main": "pack.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Compression"
+  ],
+  "author": "Simon Jackson <jackokring@gmail.com> (http://www.kring.co.uk)",
+  "license": "Research Testing"
+}
