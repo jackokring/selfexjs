@@ -10,3 +10,5 @@ in a pseudo document textarea. Plus removal of all non essential bumf. As a rese
 project on the possibilities of using this with node, there is no copyright issue. For
 commercial server use, this may not be the case. But then again, you might just use the
 compression middleware module off github.
+
+Interesting DOM thee has!
