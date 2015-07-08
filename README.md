@@ -11,4 +11,5 @@ project on the possibilities of using this with node, there is no copyright issu
 commercial server use, this may not be the case. But then again, you might just use the
 compression middleware module off github.
 
-Interesting DOM thee has!
+Decided to reimplement using Rosetta code. LZW, as it's small. It also does not depend
+on the DOM, and so is pure node.
