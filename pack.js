@@ -43,7 +43,7 @@ function compress(uncompressed) {
             } else {
                 result += String.fromCharCode(dictionary[w]);
                 // Add wc to the dictionary.
-                dictionary[wc] = dictSize++;
+                if(dictSize < 65536) dictionary[wc] = dictSize++;
                 w = String(c);
             }
         }
@@ -88,7 +88,7 @@ function decompress(compressed) {
             result += entry;
  
             // Add w+entry[0] to the dictionary.
-            dictionary[dictSize++] = w + entry.charAt(0);
+            if(dictSize < 65536) dictionary[dictSize++] = w + entry.charAt(0);
  
             w = entry;
         }
