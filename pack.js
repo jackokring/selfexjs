@@ -1,3 +1,7 @@
+function template(bin) {
+	return bin;//later
+};
+
 function compress(uncompressed) {
         "use strict";
         // Build the dictionary.
@@ -11,9 +15,11 @@ function compress(uncompressed) {
         for (i = 0; i < 256; i += 1) {
             dictionary[String.fromCharCode(i)] = i;
         }
+
+	uncompressed = template(new Buffer(uncompressed));//utf8
  
         for (i = 0; i < uncompressed.length; i += 1) {
-            c = uncompressed.charAt(i);
+            c = uncompressed[i];
             wc = w + c;
             //Do not use dictionary[wc] because javascript arrays 
             //will return values for array['pop'], array['push'] etc
@@ -35,11 +41,54 @@ function compress(uncompressed) {
         return result;
 };
 
-decomp = 'var W,H,A,K=\'function decompress() {\n "use strict";\n // Build the .\n var i,\n  = [],\n w,\n ,\n k,\n  = "",\n  = 256;\n for (i = 0; i < 256; i += 1) {\n [i] = String.fromCharCode(i);\n }\n \n w = .(0);\n  = w;\n for (i = 1; i < .length; i += 1) {\n k = .(i);\n if ([k]) {\n  = [k];\n }  {\n if (k === ) {\n  = w + w.(0);\n }  {\n  null;\n }\n }\n \n  += ;\n \n // Add w+[0] to the .\n [++] = w + .(0);\n \n w = ;\n }\n  ;\n };\',W=\'\'.split(\'\'),H=\'dictionary|compressed|entry|result|charAt|dictSize|return|else\'.split(\'|\');for(A in H)K=K.split(W[A]).join(H[A]);eval(K);'
+function merge(bin) {
+	return bin;//later
+};
+
+function decompress(compressed) {
+        "use strict";
+        // Build the dictionary.
+        var i,
+            dictionary = [],
+            w,
+            result,
+            k,
+            entry = "",
+            dictSize = 256;
+        for (i = 0; i < 256; i += 1) {
+            dictionary[i] = String.fromCharCode(i);
+        }
+ 
+        w = String.fromCharCode(compressed[0]);
+        result = w;
+        for (i = 1; i < compressed.length; i += 1) {
+            k = compressed[i];
+            if (dictionary[k]) {
+                entry = dictionary[k];
+            } else {
+                if (k === dictSize) {
+                    entry = w + w.charAt(0);
+                } else {
+                    return null;
+                }
+            }
+ 
+            result += entry;
+ 
+            // Add w+entry[0] to the dictionary.
+            dictionary[dictSize++] = w + entry.charAt(0);
+ 
+            w = entry;
+        }
+	result = merge(new Buffer(result, 'binary')).toString('utf8');
+        return result;
+};
+
+decomp = 'function decompress(a){"use strict";var b,d,e,f,c=[],g="",h=256;for(b=0;256>b;b+=1)c[b]=String.fromCharCode(b);for(d=String.fromCharCode(a[0]),e=d,b=1;b<a.length;b+=1){if(f=a[b],c[f])g=c[f];else{if(f!==h)return null;g=d+d.charAt(0)}e+=g,c[h++]=d+g.charAt(0),d=g}return e=merge(new Buffer(e,"binary")).toString("utf8")}';
 
 module.exports = {
 	pack: function(input, html = false) {
-		if(html) return '<script>'+decomp+'var J=\''+compress(input.toString())+'\';document.write(decompress(J));</script>';
-		return decomp+'var J=\''+compress(input.toString())+'\';eval(decompress(J));';
+		if(html) return '<script>'+decomp+';var J=\''+compress(input.toString())+'\';document.write(decompress(J));</script>';
+		return decomp+';var J=\''+compress(input.toString())+'\';eval(decompress(J));';
 	}
 };
