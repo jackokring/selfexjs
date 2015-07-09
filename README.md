@@ -12,4 +12,5 @@ commercial server use, this may not be the case. But then again, you might just 
 compression middleware module off github.
 
 Decided to reimplement using Rosetta code. LZW, as it's small. It also does not depend
-on the DOM, and so is pure node. Added in template and merge idea.
+on the DOM, and so is pure node. Added in template and merge idea (started, but not working).
+

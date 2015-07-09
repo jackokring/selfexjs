@@ -1,9 +1,23 @@
-function template(bin) {
-	return bin;//later
+var ug = require('uglify-js');
+
+var json;
+
+function setSource(j) {
+	json = j;//later
 };
 
 function compress(uncompressed) {
         "use strict";
+	var template = function(bin) {
+		return bin;//later
+		//the aim is to use bytes #C0 and #C1 to creative effect
+		//along with sending higher than the unknown current symbol
+		//for template insertion points. Client side template
+		//loading with effective caching.
+
+		//Also dictionary persistance for relative coding of JSON
+		//data sourcing (maybe not worth the server side loading).
+	};
         // Build the dictionary.
         var i,
             dictionary = {},
@@ -23,7 +37,7 @@ function compress(uncompressed) {
             wc = w + c;
             //Do not use dictionary[wc] because javascript arrays 
             //will return values for array['pop'], array['push'] etc
-           // if (dictionary[wc]) {
+	    // if (dictionary[wc]) {
             if (dictionary.hasOwnProperty(wc)) {
                 w = wc;
             } else {
@@ -41,12 +55,10 @@ function compress(uncompressed) {
         return result;
 };
 
-function merge(bin) {
-	return bin;//later
-};
-
 function decompress(compressed) {
-        "use strict";
+        var merge = function(bin) {
+		return bin;//later
+	};
         // Build the dictionary.
         var i,
             dictionary = [],
@@ -82,13 +94,14 @@ function decompress(compressed) {
         }
 	result = merge(new Buffer(result, 'binary')).toString('utf8');
         return result;
-};
+};'
 
-decomp = 'function decompress(a){"use strict";var b,d,e,f,c=[],g="",h=256;for(b=0;256>b;b+=1)c[b]=String.fromCharCode(b);for(d=String.fromCharCode(a[0]),e=d,b=1;b<a.length;b+=1){if(f=a[b],c[f])g=c[f];else{if(f!==h)return null;g=d+d.charAt(0)}e+=g,c[h++]=d+g.charAt(0),d=g}return e=merge(new Buffer(e,"binary")).toString("utf8")}';
+var decomp = ug.minify(decompress.toSting(), {fromString: true});
 
 module.exports = {
 	pack: function(input, html = false) {
 		if(html) return '<script>'+decomp+';var J=\''+compress(input.toString())+'\';document.write(decompress(J));</script>';
 		return decomp+';var J=\''+compress(input.toString())+'\';eval(decompress(J));';
-	}
+	},
+	setSource: setSource
 };

@@ -1,14 +1,21 @@
 {
   "name": "selfexjs",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Creates a self extracting JS string from a string of a HTML, or JS file. This extracts on the client when included as a script.",
   "main": "pack.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository" : {
+    "type" : "git",
+    "url" : "https://github.com/jackokring/selfexjs"
+  },
   "keywords": [
     "Compression"
   ],
   "author": "Simon Jackson <jackokring@gmail.com> (http://www.kring.co.uk)",
-  "license": "Research Testing"
+  "license": "Research Testing",
+  "dependencies" : {
+    "uglify-js" : "~2.4.23"
+  }
 }
