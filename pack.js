@@ -7,7 +7,6 @@ function setSource(j) {
 };
 
 function compress(uncompressed) {
-        "use strict";
 	var template = function(bin) {
 		return bin;//later
 		//the aim is to use bytes #C0 and #C1 to creative effect
@@ -103,5 +102,7 @@ module.exports = {
 		if(html) return '<script>'+decomp+';var J=\''+compress(input.toString())+'\';document.write(decompress(J));</script>';
 		return decomp+';var J=\''+compress(input.toString())+'\';eval(decompress(J));';
 	},
-	setSource: setSource
+	setSource: setSource,//also sets template element names to find <name>...</name> with JSON nesting
+	flush: null,//a combination of file cache pack and setting source
+	live: null//a utility auto update JS+JSON maker, makes some innerHTML in server push ajax with single client eval
 };
