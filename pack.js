@@ -1,4 +1,31 @@
 var ug = require('uglify-js');
+var fs = require('fs');
+var async = require('async');
+
+//supply file name and function for generating file
+function cache(file, fn, args = null) { 
+	var result = "";
+	async.each([file],
+		function(item, callback){
+			result = fs.readFileSync(item, { encoding: utf8 });
+      			callback();
+  		},
+		function(err){
+			if(!err) return;
+			result = fn(args);
+			fs.writeFile(file, result, { encoding: utf8 },
+				function(err) {
+					if(err) return console.log(err);
+    				}
+			);
+		}
+	);
+	return result;
+};
+
+function flush(file) {
+	fs.unlinkSync(file);
+};
 
 var json;
 
@@ -95,14 +122,18 @@ function decompress(compressed) {
         return result;
 };'
 
-var decomp = ug.minify(decompress.toSting(), {fromString: true});
+var decomp = cache("/tmp/.decomp.js", function() {
+				ug.minify(decompress.toSting(), {fromString: true});
+		       });
 
 module.exports = {
 	pack: function(input, html = false) {
 		if(html) return '<script>'+decomp+';var J=\''+compress(input.toString())+'\';document.write(decompress(J));</script>';
 		return decomp+';var J=\''+compress(input.toString())+'\';eval(decompress(J));';
 	},
+	cache: cache,
+	flush: flush,
 	setSource: setSource,//also sets template element names to find <name>...</name> with JSON nesting
-	flush: null,//a combination of file cache pack and setting source
+	generate: null,//a combination of file cache pack and setting source
 	live: null//a utility auto update JS+JSON maker, makes some innerHTML in server push ajax with single client eval
 };

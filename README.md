@@ -16,6 +16,9 @@ compression middleware module off github. Which is why I went for a medium LZW w
 output (plenty left to compress), but for templating, a single dictionary entry affects
 multiple locations on decompression. And makes a casual code crypt.
 
+Added in a file cache server, which is simplistic. It does not handle file permissions.
+Thus can be used to generate cache files from code which generates them.
+
 TODO
 ====
 
