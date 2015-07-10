@@ -3,28 +3,37 @@ var fs = require('fs');
 var async = require('async');
 
 //supply file name and function for generating file
+//A really ANNOYING way of Thread.yield(); --> Origination of Callback Hell
 function cache(file, fn, args = null) { 
-	var result = "";
-	async.each([file],
-		function(item, callback){
-			result = fs.readFileSync(item, { encoding: utf8 });
-      			callback();
-  		},
-		function(err){
-			if(!err) return;
-			result = fn(args);
-			fs.writeFile(file, result, { encoding: utf8 },
-				function(err) {
-					if(err) return console.log(err);
-    				}
-			);
+	if(!(file instanceof 'Array')) file = [file];
+	return async.reduce(file, "",
+		function(memo, item, callback) {
+			fs.readFile(item, { encoding: utf8 },
+				function(err, data) {
+					if(!err) {
+						memo += data;
+						callback();
+						return;
+					}
+					var result = fn(args);
+					memo += result;
+					fs.writeFile(item, result, { encoding: utf8 },
+						function(err) {
+							if(err) console.log(err);
+	    					}
+					);
+					callback();
+				}
+			});
+		},
+		function(err, result){
+			if(err) console.log(err + " <" + result + ">");//unlikely
 		}
 	);
-	return result;
 };
 
 function flush(file) {
-	fs.unlinkSync(file);
+	fs.unlink(file);
 };
 
 var json;
