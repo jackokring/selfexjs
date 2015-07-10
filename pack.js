@@ -4,21 +4,24 @@ var async = require('async');
 
 //supply file names and functions for generating string with one object argument
 //A really ANNOYING way of Thread.yield(); --> Origination of Callback Hell
-function cache(file, fn, args = null) { 
+function cache(file, args = null) { 
+	var fn = function(a) { return ""; };//do nothing
 	if(!(file instanceof 'Array')) file = [file];//each file
-	if(!(fn instanceof 'Array')) fn = [fn];//each function
 	return async.reduce(file, "",
 		function(memo, item, callback) {
+			if(file instanceof Function) {
+				fn = file;
+				callback();
+				return;
+			}
 			fs.readFile(item, { encoding: utf8 },
 				function(err, data) {
-					var fnThis = fn[0];
-					fn.shift();
 					if(!err) {
 						memo += data;
 						callback();
 						return;
 					}
-					var result = fnThis(args);
+					var result = fn(args);
 					memo += result;
 					fs.writeFile(item, result, { encoding: utf8 },
 						function(err) {
@@ -36,7 +39,7 @@ function cache(file, fn, args = null) {
 };
 
 function flush(file) {
-	fs.unlink(file);
+	fs.unlinkSync(file);
 };
 
 var json;
@@ -134,9 +137,11 @@ function decompress(compressed) {
         return result;
 };'
 
-var decomp = cache(".decomp.js", function() {//in main node directory
+var decomp = cache([	function() {
+				//in main node directory
 				ug.minify(decompress.toSting(), {fromString: true});
-		       });
+			},
+			".decomp.js"]);
 
 module.exports = {
 	pack: function(input, html = false) {

@@ -18,9 +18,10 @@ multiple locations on decompression. And makes a casual code crypt.
 
 Added in a file cache server, which is simplistic. It does not handle file permissions.
 Thus can be used to generate cache files from code which generates them. It allows
-concatenation of many files, and needs therefore a function array with one function to
-generate each file. There is a common object passed, which should have all the .tags
-needed for all the functions.
+concatenation of many files, and the first parameter if a string makes a blank file.
+If it is a function, it does nothing. If it is an array of functions and strings mixed,
+it uses the function to make all following string filenames until the next function is
+encountered. A file must be flushed before it can be recalculated by a function.
 
 TODO
 ====
