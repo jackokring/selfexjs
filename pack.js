@@ -122,7 +122,7 @@ function decompress(compressed) {
         return result;
 };'
 
-var decomp = cache("/tmp/.decomp.js", function() {
+var decomp = cache(".decomp.js", function() {//in main node directory
 				ug.minify(decompress.toSting(), {fromString: true});
 		       });
 

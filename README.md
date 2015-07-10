@@ -23,7 +23,6 @@ TODO
 ====
 
 * Template Engine (Send JSON ajaxy stylee)
-* Cache Engine (Reduce server load via piping)
 * Local Decompression Cache (localStorage HTML5) - less etc.
 * Socket Data Live
 * Page Locks and Authentication Transparency
