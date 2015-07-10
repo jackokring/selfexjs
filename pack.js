@@ -40,12 +40,6 @@ function flush(file) {
 	fs.unlinkSync(file);
 };
 
-var json;
-
-function setSource(j) {
-	json = j;//later
-};
-
 function compress(uncompressed, splice = null) {
         // Build the dictionary.
         var i,
@@ -94,7 +88,7 @@ function compress(uncompressed, splice = null) {
         return result;
 };
 
-function decompress(compressed) {
+function decompress(compressed, json = null) {
         // Build the dictionary.
         var i,
             dictionary = [],
@@ -148,7 +142,7 @@ module.exports = {
 	},
 	cache: cache,
 	flush: flush,
-	setSource: setSource,//also sets template element names to find <name>...</name> with JSON nesting
+	//also sets template element names to find <name>...</name> with JSON nesting
 	generate: null,//a combination of file cache pack and setting source
 	live: null//a utility auto update JS+JSON maker, makes some innerHTML in server push ajax with single client eval
 };
