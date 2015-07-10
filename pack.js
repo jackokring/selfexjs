@@ -2,20 +2,23 @@ var ug = require('uglify-js');
 var fs = require('fs');
 var async = require('async');
 
-//supply file name and function for generating file
+//supply file names and functions for generating string with one object argument
 //A really ANNOYING way of Thread.yield(); --> Origination of Callback Hell
 function cache(file, fn, args = null) { 
-	if(!(file instanceof 'Array')) file = [file];
+	if(!(file instanceof 'Array')) file = [file];//each file
+	if(!(fn instanceof 'Array')) fn = [fn];//each function
 	return async.reduce(file, "",
 		function(memo, item, callback) {
 			fs.readFile(item, { encoding: utf8 },
 				function(err, data) {
+					var fnThis = fn[0];
+					fn.shift();
 					if(!err) {
 						memo += data;
 						callback();
 						return;
 					}
-					var result = fn(args);
+					var result = fnThis(args);
 					memo += result;
 					fs.writeFile(item, result, { encoding: utf8 },
 						function(err) {

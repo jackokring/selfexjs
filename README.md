@@ -17,7 +17,10 @@ output (plenty left to compress), but for templating, a single dictionary entry 
 multiple locations on decompression. And makes a casual code crypt.
 
 Added in a file cache server, which is simplistic. It does not handle file permissions.
-Thus can be used to generate cache files from code which generates them.
+Thus can be used to generate cache files from code which generates them. It allows
+concatenation of many files, and needs therefore a function array with one function to
+generate each file. There is a common object passed, which should have all the .tags
+needed for all the functions.
 
 TODO
 ====
