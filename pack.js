@@ -6,7 +6,7 @@ var async = require('async');
 //A really ANNOYING way of Thread.yield(); --> Origination of Callback Hell
 function cache(file, args = null) { 
 	var fn = function(a) { return ""; };//do nothing
-	if(!(file instanceof 'Array')) file = [file];//each file
+	if(!(file instanceof Array)) file = [file];//each file
 	return async.reduce(file, "",
 		function(memo, item, callback) {
 			if(file instanceof Function) {
@@ -20,7 +20,7 @@ function cache(file, args = null) {
 						callback(null, memo + data);
 						return;
 					}
-					var result = fn(args);
+					var result = fn(item, args);
 					fs.writeFile(item, result, { encoding: utf8 },
 						function(err) {
 							if(err) console.log(err);
@@ -135,12 +135,33 @@ var decomp = cache([	function() {
 			},
 			".decomp.js"]);
 
+function pack(input, html = true, head = true) {
+	if(html) return '<script>'+((head)?decomp:'')+';var J=\''+compress(input.toString())+'\';document.write(decompress(J));</script>';
+	return ((head)?decomp:'')+';var J=\''+compress(input.toString())+'\';eval(decompress(J));';
+}
+
+//This function packs down editable scripts in the "editable" directory to compressed
+//files in the server root. The "editable" directory is in the server root.
+//Quite likely a less compiler option soon.
+function packCache(files, html = true, args = null, prefix = "editable/") {
+	files.unshift(function(item, args) {
+		return pack(fs.readFile(prefix + item, { encoding: utf8 }), html, false);	
+	});
+	return ((html)?'<script>':'') + decomp + ';' + ((html)?'</script>':'') + cache(files, args); 
+};
+
+function cachePage(fileTot, files, html = true, args = null, prefix = "editable/") {
+	return cache([	function() {
+				return packCache(files, html, args, prefix);
+			},
+			fileTot]
+);
+
 module.exports = {
-	pack: function(input, html = false) {
-		if(html) return '<script>'+decomp+';var J=\''+compress(input.toString())+'\';document.write(decompress(J));</script>';
-		return decomp+';var J=\''+compress(input.toString())+'\';eval(decompress(J));';
-	},
+	pack: pack,
 	cache: cache,
+	packCache: packCache,
+	cachePage: cachePage,
 	flush: flush,
 	//also sets template element names to find <name>...</name> with JSON nesting
 	generate: null,//a combination of file cache pack and setting source

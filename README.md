@@ -23,6 +23,12 @@ If it is a function, it does nothing. If it is an array of functions and strings
 it uses the function to make all following string filenames until the next function is
 encountered. A file must be flushed before it can be recalculated by a function.
 
+A pack cache server is now included, which prefixes "editable/" on to a requested file,
+and packs it down to be the file requested, and returns the content as a string to
+serve. It works on a double layer of total page and page section caching.
+
+Templating should be an easy matter of a simple prefix idea.
+
 TODO
 ====
 
