@@ -11,24 +11,22 @@ function cache(file, args = null) {
 		function(memo, item, callback) {
 			if(file instanceof Function) {
 				fn = file;
-				callback();
+				callback(memo);
 				return;
 			}
 			fs.readFile(item, { encoding: utf8 },
 				function(err, data) {
 					if(!err) {
-						memo += data;
-						callback();
+						callback(null, memo + data);
 						return;
 					}
 					var result = fn(args);
-					memo += result;
 					fs.writeFile(item, result, { encoding: utf8 },
 						function(err) {
 							if(err) console.log(err);
 	    					}
 					);
-					callback();
+					callback(memo + result);
 				}
 			});
 		},
@@ -48,17 +46,7 @@ function setSource(j) {
 	json = j;//later
 };
 
-function compress(uncompressed) {
-	var template = function(bin) {
-		return bin;//later
-		//the aim is to use bytes #C0 and #C1 to creative effect
-		//along with sending higher than the unknown current symbol
-		//for template insertion points. Client side template
-		//loading with effective caching.
-
-		//Also dictionary persistance for relative coding of JSON
-		//data sourcing (maybe not worth the server side loading).
-	};
+function compress(uncompressed, splice = null) {
         // Build the dictionary.
         var i,
             dictionary = {},
@@ -70,8 +58,18 @@ function compress(uncompressed) {
         for (i = 0; i < 256; i += 1) {
             dictionary[String.fromCharCode(i)] = i;
         }
+	function morph(bin) {
+		return bin;//later
+		//the aim is to use bytes #C0 and #C1 to creative effect
+		//along with sending higher than the unknown current symbol
+		//for template insertion points. Client side template
+		//loading with effective caching.
 
-	uncompressed = template(new Buffer(uncompressed));//utf8
+		//Also dictionary persistance for relative coding of JSON
+		//data sourcing (maybe not worth the server side loading).
+	};
+
+	uncompressed = morph(new Buffer(uncompressed));//utf8
  
         for (i = 0; i < uncompressed.length; i += 1) {
             c = uncompressed[i];
@@ -97,9 +95,6 @@ function compress(uncompressed) {
 };
 
 function decompress(compressed) {
-        var merge = function(bin) {
-		return bin;//later
-	};
         // Build the dictionary.
         var i,
             dictionary = [],
@@ -111,6 +106,9 @@ function decompress(compressed) {
         for (i = 0; i < 256; i += 1) {
             dictionary[i] = String.fromCharCode(i);
         }
+        function merge(bin) {
+		return bin;//later
+	};
  
         w = String.fromCharCode(compressed[0]);
         result = w;

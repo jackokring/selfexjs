@@ -1,6 +1,6 @@
 {
   "name": "selfexjs",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Creates a self extracting JS string from a string of a HTML, or JS file. This extracts on the client when included as a script.",
   "main": "pack.js",
   "scripts": {
