@@ -83,9 +83,6 @@ function flush(file) {
 }
 
 function compress(uncompressed, splice) {
-	function no(arg) {
-		return typeof arg === 'undefined';
-	}
 	if(no(splice)) splice = null;
         // Build the dictionary.
         var i,
@@ -109,10 +106,10 @@ function compress(uncompressed, splice) {
 		//data sourcing (maybe not worth the server side loading).
 	}
 
-	uncompressed = morph(new Buffer(uncompressed, 'utf8'));//utf8
+	uncompressed = morph(unescape(encodeURIComponent(uncompressed)));//utf8
  
         for (i = 0; i < uncompressed.length; i += 1) {
-            c = uncompressed[i];
+            c = uncompressed.charAt(i);
             wc = w + c;
             //Do not use dictionary[wc] because javascript arrays 
             //will return values for array['pop'], array['push'] etc
@@ -135,6 +132,9 @@ function compress(uncompressed, splice) {
 };
 
 function decompress(compressed, json) {
+	function no(arg) {
+		return typeof arg === 'undefined';
+	}
 	if(no(json)) json = null
         // Build the dictionary.
         var i,
@@ -172,8 +172,7 @@ function decompress(compressed, json) {
  
             w = entry;
         }
-	result = merge(new Buffer(result, 'binary')).toString('utf8');
-        return result;
+	return decodeURIComponent(escape(merge(result)));
 }
 
 if(DEBUG) flush(".decomp.js");
