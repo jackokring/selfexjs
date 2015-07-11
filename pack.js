@@ -1,4 +1,4 @@
-var DEBUG = true;
+var DEBUG = false;
 
 var ug = require('uglify-js');
 var fs = require('fs');
@@ -6,6 +6,14 @@ var async = require('async');
 
 function no(arg) {
 	return typeof arg === 'undefined';
+}
+
+function yes(arg, init) {
+	return (no(arg))?init:arg;
+}
+
+function read(file) {
+	return fs.readFileSync(file, { encoding: 'utf8' });
 }
 
 function minify(arg) {
@@ -25,13 +33,20 @@ function minify(arg) {
 	}).code;
 }
 
+var blank = function() { return ""; };//do nothing;
+
 //supply file names and functions for generating string with one object argument
 //A really ANNOYING way of Thread.yield(); --> Origination of Callback Hell
-function cache(file, args) { 
-	if(no(args)) args = null;
-	var fn = function() { return ""; };//do nothing
+//Along with no pointers!!!
+function cache(file, args, callback2) { 
+	if(no(callback2)) {
+		callback2 = args;
+		args = null;
+	}
+	var fn = blank;
+	if(no(callback2)) callback2 = blank;
 	if(!(file instanceof Array)) file = [file];//each file
-	return async.reduce(file, "",
+	async.reduce(file, "",
 		function(memo, item, callback) {
 			if(item instanceof Function) {
 				fn = item;
@@ -55,8 +70,8 @@ function cache(file, args) {
 			);
 		},
 		function(err, result){
-			if(err) console.log(err + " <" + result + ">");//unlikely
-			return result;
+			if(err) console.log(err);
+			callback2(result);
 		}
 	);
 }
@@ -163,44 +178,71 @@ function decompress(compressed, json) {
 
 if(DEBUG) flush(".decomp.js");
 
-var decomp = cache([	function() {
-				//in main node directory
-				return minify(decompress.toString());
-			},
-			".decomp.js"]);
+cache([	function() {
+		//in main node directory
+		return minify(decompress.toString());
+	},
+	".decomp.js"]);
 
-function pack(input, html, head) {
-	if(no(html)) html = true;
-	if(no(head)) head = true;
-	if(html) return '<script>'+((head)?decomp:'')+';var J=\''+compress(input.toString())+'\';document.write(decompress(J));</script>';
-	return ((head)?decomp:'')+';var J=\''+compress(input.toString())+'\';eval(decompress(J));';
+function pack(input, args) {
+	var decomp = "";
+	var html = true;
+	var head = true;
+	if(yes(args, false)) {
+		html = yes(args.html, html);
+		head = yes(args.head, head);
+	}
+	if(head) decomp = read(".decomp.js");
+	return (html)?('<script>'+ decomp +'var J=\''+compress(input.toString())+'\';document.write(decompress(J));</script>'):
+		(decomp +'var J=\''+compress(input.toString())+'\';eval(decompress(J));');
 }
 
 //This function packs down editable scripts in the "editable" directory to compressed
 //files in the server root. The "editable" directory is in the server root.
 //Quite likely a less compiler option soon.
-function packCache(files, html, args, prefix) {
-	if(no(html)) html = true;
-	if(no(args)) args = true;
-	if(no(prefix)) prefix = "editable/";
+function packCache(files, args, callback) {
+	var decomp;
+	if(no(callback)) {
+		callback = args;
+		args = null;
+	}
+	var html = true;
+	var head = true;
+	var prefix = "editable/";
+	if(yes(args, false)) {
+		html = yes(args.html, html);
+		head = yes(args.head, head);
+		prefix = yes(args.prefix, prefix);
+	}
+	if(head) decomp = read(".decomp.js");
 	files.unshift(function(item, args) {
-		return pack(fs.readFile(prefix + item, { encoding: utf8 }), html, false);	
+		return pack(read(prefix + item), { html: html, head: false});	
 	});
-	return ((html)?'<script>':'') + decomp + ';' + ((html)?'</script>':'') + cache(files, args); 
+	cache(files, args, function(res) {
+		callback(((html)?'<script>':'') + decomp + ';' + ((html)?'</script>':'') + res);
+	}); 
 }
 
-function cachePage(fileTot, files, html, args, prefix) {
-	if(no(html)) html = true;
-	if(no(args)) args = true;
-	if(no(prefix)) prefix = "editable/";
-	return cache([	function() {
-				return packCache(files, html, args, prefix);
+function cachePage(fileTot, files, args, callback) {
+	if(no(callback)) {
+		callback = args;
+		args = null;
+	}
+	cache([	function() {
+				packCache(files, args, blank);
 			},
-			fileTot]);
+			fileTot],
+			callback);
 }
 
 module.exports = {
+	DEBUG: DEBUG,
 	pack: pack,
+	minify: minify,
+	no: no,
+	yes: yes,
+	blank: blank,
+	read: read,
 	cache: cache,
 	packCache: packCache,
 	cachePage: cachePage,
