@@ -16,7 +16,7 @@ function cache(file, args) {
 		function(memo, item, callback) {
 			if(item instanceof Function) {
 				fn = item;
-				callback(memo);
+				callback(null, memo);
 				return;
 			}
 			fs.readFile(item, { encoding: 'utf8' },
@@ -31,7 +31,7 @@ function cache(file, args) {
 							if(err) console.log(err);
 	    					}
 					);
-					callback(memo + result);
+					callback(null, memo + result);
 				}
 			);
 		},
@@ -42,10 +42,15 @@ function cache(file, args) {
 }
 
 function flush(file) {
-	fs.unlinkSync(file);
+	try {
+		fs.unlinkSync(file);
+	} catch(e) {};
 }
 
 function compress(uncompressed, splice) {
+	function no(arg) {
+		return typeof arg === 'undefined';
+	}
 	if(no(splice)) splice = null;
         // Build the dictionary.
         var i,
@@ -136,9 +141,11 @@ function decompress(compressed, json) {
         return result;
 }
 
+flush(".decomp.js");
+
 var decomp = cache([	function() {
 				//in main node directory
-				ug.minify(decompress.toString(), {fromString: true});
+				return ug.minify(decompress.toString(), {fromString: true});
 			},
 			".decomp.js"]);
 
