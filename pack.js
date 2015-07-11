@@ -1,9 +1,28 @@
+var DEBUG = true;
+
 var ug = require('uglify-js');
 var fs = require('fs');
 var async = require('async');
 
 function no(arg) {
 	return typeof arg === 'undefined';
+}
+
+function minify(arg) {
+	return ug.minify(arg, {
+		fromString: true,
+		mangle: true,
+		compress: {
+			sequences: true,
+			dead_code: true,
+			conditionals: true,
+			booleans: true,
+			unused: true,
+			if_return: true,
+			join_vars: true,
+			drop_console: true
+		}
+	}).code;
 }
 
 //supply file names and functions for generating string with one object argument
@@ -37,6 +56,7 @@ function cache(file, args) {
 		},
 		function(err, result){
 			if(err) console.log(err + " <" + result + ">");//unlikely
+			return result;
 		}
 	);
 }
@@ -141,11 +161,11 @@ function decompress(compressed, json) {
         return result;
 }
 
-flush(".decomp.js");
+if(DEBUG) flush(".decomp.js");
 
 var decomp = cache([	function() {
 				//in main node directory
-				return ug.minify(decompress.toString(), {fromString: true});
+				return minify(decompress.toString());
 			},
 			".decomp.js"]);
 
