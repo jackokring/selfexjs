@@ -132,6 +132,7 @@ function flush(file) {
 
 function compress(uncompressed, splice) {
 	if(no(splice)) splice = null;
+	var dictInit = 245;
         // Build the dictionary.
         var i,
             dictionary = {},
@@ -139,8 +140,8 @@ function compress(uncompressed, splice) {
             wc,
             w = "",
             result = "",
-            dictSize = 256;
-        for (i = 0; i < 256; i += 1) {
+            dictSize = dictInit;
+        for (i = 0; i < dictSize; i += 1) {
             dictionary[String.fromCharCode(i)] = i;
         }
 	function morph(bin) {
@@ -159,17 +160,16 @@ function compress(uncompressed, splice) {
         for (i = 0; i < uncompressed.length; i += 1) {
             c = uncompressed.charAt(i);
             wc = w + c;
-            //Do not use dictionary[wc] because javascript arrays 
-            //will return values for array['pop'], array['push'] etc
-	    // if (dictionary[wc]) {
             if (dictionary.hasOwnProperty(wc)) {
-                w = wc;
-            } else {
-                result += String.fromCharCode(dictionary[w]);
-                // Add wc to the dictionary.
-                if(dictSize < 65536) dictionary[wc] = dictSize++;
-                w = String(c);
+                wc += String.fromCharCode(dictInit);//trailer
             }
+	    if (dictionary.hasOwnProperty(w)) {
+                w += String.fromCharCode(dictInit);//trailer
+            }
+	    result += String.fromCharCode(dictionary[w]);
+	    // Add wc to the dictionary.
+	    if(dictSize < 65536) dictionary[wc] = dictSize++;
+	    w = String(c);
         }
  
         // Output the code for w.
@@ -191,18 +191,18 @@ function decompress(compressed, json) {
             result,
             k,
             entry = "",
-            dictSize = 256;
-        for (i = 0; i < 256; i += 1) {
+            dictSize = 245;
+        for (i = 0; i < dictSize; i += 1) {
             dictionary[i] = String.fromCharCode(i);
         }
         function merge(bin) {
 		return bin;//later
 	}
  
-        w = String.fromCharCode(compressed[0]);
+        w = String.fromCharCode(compressed.charAt(0));
         result = w;
         for (i = 1; i < compressed.length; i += 1) {
-            k = compressed[i];
+            k = compressed.charAt(i);
             if (dictionary[k]) {
                 entry = dictionary[k];
             } else {
