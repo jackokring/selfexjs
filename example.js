@@ -4,6 +4,7 @@
 var pack = require('selfexjs');
 var app = pack.app();//an express app with some form data post handlers etc.
 //var vhost = require('vhost');
+pack.DEBUG = true;//turn on debug flushing
 
 app.get('/', function(req, res){
   res.send('hello world');

@@ -1,4 +1,4 @@
-var DEBUG = true;
+var DEBUG = false;
 
 var express = require('express');
 var bodyParser = require('body-parser');
@@ -93,6 +93,7 @@ function cache(file, args, callback2) {
 				callback(null, memo);
 				return;
 			}
+			if(DEBUG) flush(item);
 			fs.readFile(item, { encoding: 'utf8' },
 				function(err, data) {
 					if(!err) {
@@ -215,8 +216,6 @@ function decompress(compressed, json) {
 	return decodeURIComponent(escape(merge(result)));
 }
 
-if(DEBUG) flush(".decomp.js");
-
 cache([	function() {
 		//in main node directory
 		return minify(decompress.toString());
@@ -275,6 +274,7 @@ function cachePage(fileTot, files, args, callback) {
 }
 
 module.exports = {
+	DEBUG: DEBUG,
 	downloads: downloads,
 	app: app,
 	pack: pack,
