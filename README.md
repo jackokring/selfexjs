@@ -27,6 +27,10 @@ A pack cache server is now included, which prefixes "editable/" on to a requeste
 and packs it down to be the file requested, and returns the content as a string to
 serve. It works on a double layer of total page and page section caching.
 
+I have made it easy to get an Express app with inbuilt less, form data and JSON parsing,
+have added logging automatically, along with favicon.ico serving. Also a downloads function
+sets up an app server which static serves dowloads with and auto save dialog.
+
 Templating should be an easy matter of a simple prefix idea.
 
 TODO
