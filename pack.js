@@ -36,8 +36,8 @@ function app() {
 	var accessLogStream = fs.createWriteStream('access.log', {flags: 'a'});
 	a.use(logs('combined', {stream: accessLogStream}));
 	a.use(cookie());
-	a.use(less('css', { force: DEBUG }));
-	a.use(statServ('css'));
+	a.use('/css', less('css', { force: DEBUG }));
+	a.use('/css', statServ('css'));
 	a.use(bodyParser.json()); // for parsing application/json
 	a.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 	a.use(multer()); // for parsing multipart/form-data
