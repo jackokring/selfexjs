@@ -17,6 +17,13 @@ function downloads(folder) {
 	}));
 }
 
+//serve say an image folder
+function serve(folder) {
+	return express().use(statServ(folder, {
+		'index': false
+	}));
+}
+
 // Set header to force download
 function setHeaders(res, path) {
   res.setHeader('Content-Disposition', contentDisposition(path))
@@ -275,6 +282,7 @@ function cachePage(fileTot, files, args, callback) {
 
 module.exports = {
 	DEBUG: DEBUG,
+	serve: serve,
 	downloads: downloads,
 	app: app,
 	pack: pack,
