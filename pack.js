@@ -7,6 +7,7 @@ var cookie = require('cookie-parser');
 var favicon = require('serve-favicon');
 var statServ = require('serve-static');
 var logs = require('morgan');
+var less = require('less-middleware');
 
 // Serve a download folder
 function downloads(folder) {
@@ -35,6 +36,8 @@ function app() {
 	var accessLogStream = fs.createWriteStream('access.log', {flags: 'a'});
 	a.use(logs('combined', {stream: accessLogStream}));
 	a.use(cookie());
+	a.use(less('css', { force: DEBUG }));
+	a.use(statServ('css'));
 	a.use(bodyParser.json()); // for parsing application/json
 	a.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 	a.use(multer()); // for parsing multipart/form-data
