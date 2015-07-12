@@ -1,4 +1,16 @@
-var DEBUG = false;
+var DEBUG = true;
+
+var express = require('express');
+var bodyParser = require('body-parser');
+var multer = require('multer'); 
+
+function app() {
+	var a = express();
+	a.use(bodyParser.json()); // for parsing application/json
+	a.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
+	a.use(multer()); // for parsing multipart/form-data
+	return a;
+}
 
 var ug = require('uglify-js');
 var fs = require('fs');
@@ -235,7 +247,7 @@ function cachePage(fileTot, files, args, callback) {
 }
 
 module.exports = {
-	DEBUG: DEBUG,
+	app: app,
 	pack: pack,
 	minify: minify,
 	no: no,
