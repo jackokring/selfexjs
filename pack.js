@@ -2,10 +2,36 @@ var DEBUG = true;
 
 var express = require('express');
 var bodyParser = require('body-parser');
-var multer = require('multer'); 
+var multer = require('multer');
+var cookie = require('cookie-parser');
+var favicon = require('serve-favicon');
+
+// Serve a download folder
+function downloads(folder) {
+	return express().use(express.static(folder, {
+		'index': false,
+		'setHeaders': setHeaders
+	}));
+}
+
+// Set header to force download
+function setHeaders(res, path) {
+  res.setHeader('Content-Disposition', contentDisposition(path))
+}
+
+
+function read(file) {
+	return fs.readFileSync(file, { encoding: 'utf8' });
+}
 
 function app() {
 	var a = express();
+	var fv = 'favicon.ico';
+	try {
+		read(fv);
+		a.use(favicon(fv));
+	} catch(e) {};
+	a.use(cookie());
 	a.use(bodyParser.json()); // for parsing application/json
 	a.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
 	a.use(multer()); // for parsing multipart/form-data
@@ -22,10 +48,6 @@ function no(arg) {
 
 function yes(arg, init) {
 	return (no(arg))?init:arg;
-}
-
-function read(file) {
-	return fs.readFileSync(file, { encoding: 'utf8' });
 }
 
 function minify(arg) {
@@ -247,6 +269,7 @@ function cachePage(fileTot, files, args, callback) {
 }
 
 module.exports = {
+	downloads: downloads,
 	app: app,
 	pack: pack,
 	minify: minify,
