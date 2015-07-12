@@ -160,9 +160,6 @@ function compress(uncompressed, splice) {
         for (i = 0; i < uncompressed.length; i += 1) {
             c = uncompressed.charAt(i);
             wc = w + c;
-            if (dictionary.hasOwnProperty(wc)) {
-                wc += String.fromCharCode(dictInit);//trailer
-            }
 	    if (dictionary.hasOwnProperty(w)) {
                 w += String.fromCharCode(dictInit);//trailer
             }
