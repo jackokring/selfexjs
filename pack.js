@@ -5,10 +5,12 @@ var bodyParser = require('body-parser');
 var multer = require('multer');
 var cookie = require('cookie-parser');
 var favicon = require('serve-favicon');
+var statServ = require('serve-static');
+var logs = require('morgan');
 
 // Serve a download folder
 function downloads(folder) {
-	return express().use(express.static(folder, {
+	return express().use(statServ(folder, {
 		'index': false,
 		'setHeaders': setHeaders
 	}));
@@ -18,7 +20,6 @@ function downloads(folder) {
 function setHeaders(res, path) {
   res.setHeader('Content-Disposition', contentDisposition(path))
 }
-
 
 function read(file) {
 	return fs.readFileSync(file, { encoding: 'utf8' });
@@ -31,6 +32,8 @@ function app() {
 		read(fv);
 		a.use(favicon(fv));
 	} catch(e) {};
+	var accessLogStream = fs.createWriteStream('access.log', {flags: 'a'});
+	a.use(logs('combined', {stream: accessLogStream}));
 	a.use(cookie());
 	a.use(bodyParser.json()); // for parsing application/json
 	a.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
