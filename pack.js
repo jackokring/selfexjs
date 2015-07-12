@@ -132,7 +132,6 @@ function flush(file) {
 
 function compress(uncompressed, splice) {
 	if(no(splice)) splice = null;
-	var dictInit = 245;
         // Build the dictionary.
         var i,
             dictionary = {},
@@ -140,7 +139,7 @@ function compress(uncompressed, splice) {
             wc,
             w = "",
             result = "",
-            dictSize = dictInit;
+            dictSize = 245;
         for (i = 0; i < dictSize; i += 1) {
             dictionary[String.fromCharCode(i)] = i;
         }
@@ -160,13 +159,14 @@ function compress(uncompressed, splice) {
         for (i = 0; i < uncompressed.length; i += 1) {
             c = uncompressed.charAt(i);
             wc = w + c;
-	    if (dictionary.hasOwnProperty(w)) {
-                w += String.fromCharCode(dictInit);//trailer
-            }
-	    result += String.fromCharCode(dictionary[w]);
-	    // Add wc to the dictionary.
-	    if(dictSize < 65536) dictionary[wc] = dictSize++;
-	    w = String(c);
+	    if (dictionary.hasOwnProperty(wc)) {
+                w = wc;
+            } else {
+	        result += String.fromCharCode(dictionary[w]);
+	        // Add wc to the dictionary.
+	        if(dictSize < 65536) dictionary[wc] = dictSize++;
+	        w = String(c);
+	    }
         }
  
         // Output the code for w.
@@ -226,6 +226,7 @@ cache([	function() {
 	},
 	".decomp.js"]);
 
+//JSON handling?
 function pack(input, args) {
 	var decomp = "";
 	var html = true;
