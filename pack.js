@@ -235,8 +235,8 @@ function pack(input, args) {
 		head = yes(args.head, head);
 	}
 	if(head) decomp = read(".decomp.js");
-	return (html)?('<script>'+ decomp +'var J=\''+compress(input.toString())+'\';document.write(decompress(J));</script>'):
-		(decomp +'var J=\''+compress(minify(input.toString()))+'\';eval(decompress(J));');
+	return (html)?('<script>'+ decomp +';document.write(decompress(\''+compress(input.toString())+'\'));</script>'):
+		(decomp +';eval(decompress(\''+compress(minify(input.toString()))+'\'));');
 }
 
 //This function packs down editable scripts in the "editable" directory to compressed
