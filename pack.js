@@ -271,8 +271,13 @@ function cachePage(fileTot, files, args, callback) {
 		callback = args;
 		args = null;
 	}
+	var json = false;
+	if(yes(args, false)) json = yes(args.json, false); 
 	cache([	function() {
 				packCache(files, args, blank);
+				//TODO  + ((json)";decompress.json=eval(decompress("+JSON.stringify(json)+"))"?:"")
+
+//=======================FIX=====================
 			},
 			fileTot],
 			callback);
