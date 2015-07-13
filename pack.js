@@ -88,7 +88,7 @@ var blank = function() { return ""; };//do nothing;
 function cache(file, args, callback2) { 
 	if(no(callback2)) {
 		callback2 = args;
-		args = null;
+		args = {};
 	}
 	var fn = blank;
 	if(no(callback2)) callback2 = blank;
@@ -154,7 +154,7 @@ function compress(uncompressed, splice) {
 		//data sourcing (maybe not worth the server side loading).
 	}
 
-	uncompressed = morph(unescape(encodeURIComponent(uncompressed)));//utf8
+	uncompressed = morph(encodeURIComponent(uncompressed));//utf8
  
         for (i = 0; i < uncompressed.length; i += 1) {
             c = uncompressed.charAt(i);
@@ -217,7 +217,7 @@ function decompress(compressed, json) {
  
             w = entry;
         }
-	return decodeURIComponent(escape(merge(result)));
+	return decodeURIComponent(merge(result));
 }
 
 cache([	function() {
@@ -231,11 +231,13 @@ function pack(input, args) {
 	var decomp = "";
 	var html = true;
 	var head = true;
+	var json = false;
 	if(yes(args, false)) {
 		html = yes(args.html, html);
 		head = yes(args.head, head);
+		json = yes(args.json, json); 
 	}
-	if(head) decomp = read(".decomp.js");
+	if(head) decomp = read(".decomp.js") + ((json)";decompress.json=eval("+JSON.stringify(json)+")"?:")");
 	return (html)?('<script>'+ decomp +';document.write(decompress(\''+compress(input.toString())+'\'));</script>'):
 		(decomp +';eval(decompress(\''+compress(minify(input.toString()))+'\'));');
 }
@@ -247,19 +249,17 @@ function packCache(files, args, callback) {
 	var decomp;
 	if(no(callback)) {
 		callback = args;
-		args = null;
+		args = {};
 	}
 	var html = true;
-	var head = true;
 	var prefix = "editable/";
 	if(yes(args, false)) {
 		html = yes(args.html, html);
-		head = yes(args.head, head);
 		prefix = yes(args.prefix, prefix);
 	}
 	if(head) decomp = read(".decomp.js");
 	files.unshift(function(item, args) {
-		return pack(read(prefix + item), { html: html, head: false});	
+		return pack(read(prefix + item), { html: html, head: false });	
 	});
 	cache(files, args, function(res) {
 		callback(((html)?'<script>':'') + decomp + ';' + ((html)?'</script>':'') + res);
@@ -269,18 +269,25 @@ function packCache(files, args, callback) {
 function cachePage(fileTot, files, args, callback) {
 	if(no(callback)) {
 		callback = args;
-		args = null;
+		args = {};
 	}
+	var html = true;
+	var head = true;
 	var json = false;
-	if(yes(args, false)) json = yes(args.json, false); 
-	cache([	function() {
-				packCache(files, args, blank);
-				//TODO  + ((json)";decompress.json=eval(decompress("+JSON.stringify(json)+"))"?:"")
-
-//=======================FIX=====================
-			},
-			fileTot],
-			callback);
+	if(yes(args, false)) {
+		html = yes(args.html, html);
+		head = yes(args.head, head);
+		json = yes(args.json, json); 
+	}
+	packCache(files, args,
+		function(res) {
+			cache([
+				function(file, arg) {
+					return res;
+				},
+				fileTot], callback(pack("", { html: html, head: true, json: json } ) + res));
+		}
+	);		
 }
 
 module.exports = {
