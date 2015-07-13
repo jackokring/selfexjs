@@ -231,13 +231,11 @@ function pack(input, args) {
 	var decomp = "";
 	var html = true;
 	var head = true;
-	var json = false;
 	if(yes(args, false)) {
 		html = yes(args.html, html);
 		head = yes(args.head, head);
-		json = yes(args.json, json); 
 	}
-	if(head) decomp = read(".decomp.js") + ((json)";decompress.json=eval("+JSON.stringify(json)+")"?:")");
+	if(head) decomp = read(".decomp.js");
 	return (html)?('<script>'+ decomp +';document.write(decompress(\''+compress(input.toString())+'\'));</script>'):
 		(decomp +';eval(decompress(\''+compress(minify(input.toString()))+'\'));');
 }
@@ -257,16 +255,16 @@ function packCache(files, args, callback) {
 		html = yes(args.html, html);
 		prefix = yes(args.prefix, prefix);
 	}
-	if(head) decomp = read(".decomp.js");
 	files.unshift(function(item, args) {
 		return pack(read(prefix + item), { html: html, head: false });	
 	});
 	cache(files, args, function(res) {
-		callback(((html)?'<script>':'') + decomp + ';' + ((html)?'</script>':'') + res);
+		callback(res);
 	}); 
 }
 
 function cachePage(fileTot, files, args, callback) {
+	var splice = "";//add last file to splice ... TODO
 	if(no(callback)) {
 		callback = args;
 		args = {};
@@ -285,7 +283,8 @@ function cachePage(fileTot, files, args, callback) {
 				function(file, arg) {
 					return res;
 				},
-				fileTot], callback(pack("", { html: html, head: true, json: json } ) + res));
+				//NB. escape and splice
+				fileTot], callback(pack(((json)?("decompress.json="+JSON.stringify(json)):""), args) + res));
 		}
 	);		
 }
@@ -302,7 +301,6 @@ module.exports = {
 	blank: blank,
 	read: read,
 	cache: cache,
-	packCache: packCache,
 	cachePage: cachePage,
 	flush: flush,
 	//also sets template element names to find <name>...</name> with JSON nesting
