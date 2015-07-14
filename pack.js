@@ -139,19 +139,34 @@ function compress(uncompressed) {
             w = "",
             result = "",
 	    k,
-            dictSize = 180;
+	    last = 0,
+            dictSize = 0xD0;
         for (i = 0; i < dictSize; i += 1) {
             dictionary[String.fromCharCode(i)] = i;
         }
 
-	uncompressed = encodeURIComponent(uncompressed);//utf8
+	uncompressed = unescape(encodeURIComponent(uncompressed));//utf8
  
-        for (i = 0; i < uncompressed.length; i += 1) {
+        for (i = 0; i < uncompressed.length; i++) {
             c = uncompressed.charAt(i);
 	    k = c.charCodeAt(0);
-	    if(k > 127)
-		if(k < 192) k -= 128;
-		else k -= 64;
+	    if(k >= 0x80) {
+		if(k < 0xC0) {
+			k -= 96;
+		} else {
+			if(k == last) {
+				continue;
+			}
+			last = k;
+			k -= 64;
+		}
+	    } else {
+		if(last != 0) {
+			last = 0;
+			--i;
+			k = 0xC0 - 64;
+		}
+	    }
 	    c = String.fromCharCode(k);
             wc = w + c;
 	    if (dictionary.hasOwnProperty(wc)) {
@@ -179,7 +194,9 @@ function decompress(compressed) {
             result,
             k,
             entry = "",
-            dictSize = 180;
+	    last = 0,
+	    lmany = 0,
+            dictSize = 0xD0;
         for (i = 0; i < dictSize; i += 1) {
             dictionary[i] = String.fromCharCode(i);
         }
@@ -189,7 +206,7 @@ function decompress(compressed) {
         w = String.fromCharCode(compressed.charAt(0));
         result = w;
 	many = 0;
-        for (i = 1; i < compressed.length; i += 1) {
+        for (i = 1; i < compressed.length; i++) {
             k = compressed.charAt(i);
             if (dictionary[k]) {
                 entry = dictionary[k];
@@ -207,20 +224,31 @@ function decompress(compressed) {
             w = entry;
         }
 	w = "";
-	for(i = 0; i < result.length; i += 1) {
+	for(i = 0; i < result.length; i++) {
 	    k = result.charCodeAt(i);
-	    if(k > 127) {
+	    if(k == 0xC0 - 64) {
+		last = 0;
+		many = 0;
+		continue;
+	    }
+	    if(k >= 0x80) {
 		k += 64;
 		++many;
-		if(k > 149) ++many;
-		if(k > 165) ++many;
+		last = k;
+		if(k >= 0xE0) ++many;
+		lmany = many;
 	    } else {
-		if(many-- > 0) c += 128;
-		else many = 0;
+		if(many-- > 0) {
+			k += 96;
+		} else {
+			many = lmany;
+			--i;
+			k = last;
+		}
 	    }
 	    w += String.fromCharCode(k);
 	}
-	return decodeURIComponent(w);
+	return decodeURIComponent(escape(w));
 }
 
 var filename = ".decomp.js";
