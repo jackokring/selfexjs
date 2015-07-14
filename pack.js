@@ -111,9 +111,9 @@ function cache(file, args, callback2) {
 					fs.writeFile(item, result, { encoding: 'utf8' },
 						function(err) {
 							if(err) console.log(err);
+							callback(null, memo + result);
 	    					}
 					);
-					callback(null, memo + result);
 				}
 			);
 		},
@@ -130,8 +130,7 @@ function flush(file) {
 	} catch(e) {};
 }
 
-function compress(uncompressed, splice) {
-	if(no(splice)) splice = null;
+function compress(uncompressed) {
         // Build the dictionary.
         var i,
             dictionary = {},
@@ -139,25 +138,21 @@ function compress(uncompressed, splice) {
             wc,
             w = "",
             result = "",
-            dictSize = 245;
+	    k,
+            dictSize = 180;
         for (i = 0; i < dictSize; i += 1) {
             dictionary[String.fromCharCode(i)] = i;
         }
-	function morph(bin) {
-		return bin;//later
-		//the aim is to use bytes #C0 and #C1 to creative effect
-		//along with sending higher than the unknown current symbol
-		//for template insertion points. Client side template
-		//loading with effective caching.
 
-		//Also dictionary persistance for relative coding of JSON
-		//data sourcing (maybe not worth the server side loading).
-	}
-
-	uncompressed = morph(encodeURIComponent(uncompressed));//utf8
+	uncompressed = encodeURIComponent(uncompressed);//utf8
  
         for (i = 0; i < uncompressed.length; i += 1) {
             c = uncompressed.charAt(i);
+	    k = c.charCodeAt(0);
+	    if(k > 127)
+		if(k < 192) k -= 128;
+		else k -= 64;
+	    c = String.fromCharCode(k);
             wc = w + c;
 	    if (dictionary.hasOwnProperty(wc)) {
                 w = wc;
@@ -173,14 +168,10 @@ function compress(uncompressed, splice) {
         if (w !== "") {
             result += String.fromCharCode(dictionary[w]);
         }
-        return result;
+        return escape(result);
 };
 
-function decompress(compressed, json) {
-	function no(arg) {
-		return typeof arg === 'undefined';
-	}
-	if(no(json)) json = null
+function decompress(compressed) {
         // Build the dictionary.
         var i,
             dictionary = [],
@@ -188,16 +179,16 @@ function decompress(compressed, json) {
             result,
             k,
             entry = "",
-            dictSize = 245;
+            dictSize = 180;
         for (i = 0; i < dictSize; i += 1) {
             dictionary[i] = String.fromCharCode(i);
         }
-        function merge(bin) {
-		return bin;//later
-	}
+
+	compressed = unescape(compressed);
  
         w = String.fromCharCode(compressed.charAt(0));
         result = w;
+	many = 0;
         for (i = 1; i < compressed.length; i += 1) {
             k = compressed.charAt(i);
             if (dictionary[k]) {
@@ -205,58 +196,62 @@ function decompress(compressed, json) {
             } else {
                 if (k === dictSize) {
                     entry = w + w.charAt(0);
-                } else {
-                    return null;
                 }
             }
  
-            result += entry;
+            result += entry
  
             // Add w+entry[0] to the dictionary.
             if(dictSize < 65536) dictionary[dictSize++] = w + entry.charAt(0);
  
             w = entry;
         }
-	return decodeURIComponent(merge(result));
+	w = "";
+	for(i = 0; i < result.length; i += 1) {
+	    k = result.charCodeAt(i);
+	    if(k > 127) {
+		k += 64;
+		++many;
+		if(k > 149) ++many;
+		if(k > 165) ++many;
+	    } else {
+		if(many-- > 0) c += 128;
+		else many = 0;
+	    }
+	    w += String.fromCharCode(k);
+	}
+	return decodeURIComponent(w);
 }
+
+var filename = ".decomp.js";
+var decomp;
 
 cache([	function() {
 		//in main node directory
-		return minify(decompress.toString());
+		decomp = minify(decompress.toString()) + ";";
+		return decomp;
 	},
-	".decomp.js"]);
+	filename]);
 
-//JSON handling?
 function pack(input, args) {
-	var decomp = "";
 	var html = true;
-	var head = true;
 	if(yes(args, false)) {
 		html = yes(args.html, html);
-		head = yes(args.head, head);
 	}
-	if(head) decomp = read(".decomp.js");
-	return (html)?('<script>'+ decomp +';document.write(decompress(\''+compress(input.toString())+'\'));</script>'):
-		(decomp +';eval(decompress(\''+compress(minify(input.toString()))+'\'));');
+	return (html)?('<script>document.write(decompress(\''+compress(input.toString())+'\'));</script>'):
+		('eval(decompress(\''+compress(minify(input.toString()))+'\'));');
 }
 
 //This function packs down editable scripts in the "editable" directory to compressed
 //files in the server root. The "editable" directory is in the server root.
-//Quite likely a less compiler option soon.
 function packCache(files, args, callback) {
 	var decomp;
 	if(no(callback)) {
 		callback = args;
 		args = {};
 	}
-	var html = true;
-	var prefix = "editable/";
-	if(yes(args, false)) {
-		html = yes(args.html, html);
-		prefix = yes(args.prefix, prefix);
-	}
 	files.unshift(function(item, args) {
-		return pack(read(prefix + item), { html: html, head: false });	
+		return pack(read("editable/" + item), args);	
 	});
 	cache(files, args, function(res) {
 		callback(res);
@@ -264,33 +259,48 @@ function packCache(files, args, callback) {
 }
 
 function cachePage(fileTot, files, args, callback) {
-	var splice = "";//add last file to splice ... TODO
 	if(no(callback)) {
 		callback = args;
 		args = {};
 	}
-	var html = true;
+	var header = "";
 	var head = true;
-	var json = false;
+	var html = true;
 	if(yes(args, false)) {
-		html = yes(args.html, html);
-		head = yes(args.head, head);
-		json = yes(args.json, json); 
+		head = yes(args.head, true);
+		html = yes(args.html, true);
 	}
+	if(head && html) header = "<script src='/"+filename+"'></script>";
+	if(head && !html) header = decomp;
 	packCache(files, args,
 		function(res) {
 			cache([
 				function(file, arg) {
-					return res;
+					return header + res;
 				},
 				//NB. escape and splice
-				fileTot], callback(pack(((json)?("decompress.json="+JSON.stringify(json)):""), args) + res));
+				fileTot], function(result) { callback(result) });
 		}
 	);		
 }
 
+function getExtension(filename) {
+    return filename.split('.').pop();
+}
+
+function packServe(req, res, next) {
+	var file = req.path;
+	var args = {};
+	args.html = (getExtension(file) === "html")?true:false;
+	args.header = args.html;
+	var path = "." + req.path;
+	cachePage("cache/" + path, [path], args, function (res) {
+		res.send(res);
+	});
+}
+
 module.exports = {
-	DEBUG: DEBUG,
+	DEBUG: DEBUG,//true to clean cache
 	serve: serve,
 	downloads: downloads,
 	app: app,
@@ -301,9 +311,6 @@ module.exports = {
 	blank: blank,
 	read: read,
 	cache: cache,
-	cachePage: cachePage,
-	flush: flush,
-	//also sets template element names to find <name>...</name> with JSON nesting
-	generate: null,//a combination of file cache pack and setting source
-	live: null//a utility auto update JS+JSON maker, makes some innerHTML in server push ajax with single client eval
+	packServe: packServe,
+	flush: flush
 }

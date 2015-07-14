@@ -13,8 +13,7 @@ been hacked to attempt to generate data in a pseudo document textarea mess). As 
 project on the possibilities of using this with node, there is no copyright issue. For
 commercial server use, this may not be the case. But then again, you might just use the
 compression middleware module off github. Which is why I went for a medium LZW with UTF-8
-output (plenty left to compress), but for templating, a single dictionary entry affects
-multiple locations on decompression. And makes a casual code crypt.
+output (plenty left to compress), making a casual code crypt.
 
 Added in a file cache server, which is simplistic. It does not handle file permissions.
 Thus can be used to generate cache files from code which generates them. It allows
@@ -31,13 +30,9 @@ I have made it easy to get an Express app with inbuilt less, form data and JSON 
 have added logging automatically, along with favicon.ico serving. Also a downloads function
 sets up an app server which static serves dowloads with and auto save dialog.
 
-Templating should be an easy matter of a simple prefix idea.
-
-TODO
-====
-
-* Template Engine (Send JSON ajaxy stylee)
-* Local Decompression Cache (localStorage HTML5) - less etc.
-* Socket Data Live
-* Page Locks and Authentication Transparency
-* ... More
+There is also a packServe callback which can be used with app.use to pack and serve with
+a cache the contents of the "editable/" directory. This also places the final pack page in
+the "cache/" directory (the first serve). The intermediates placed in the base directory
+are only ever used if the "cache/" copy does not exist. This makes it possible to edit
+a site without destroying service. For example various notifications can be edited in, and
+the site can activate them all at once when they "look good".
