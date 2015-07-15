@@ -36,3 +36,26 @@ the "cache/" directory (the first serve). The intermediates placed in the base d
 are only ever used if the "cache/" copy does not exist. This makes it possible to edit
 a site without destroying service. For example various notifications can be edited in, and
 the site can activate them all at once when they "look good".
+
+Exports
+=======
+
+	DEBUG: A debug flag which clears cache before generation when true
+	compress: LZW compression with Unicode optimization
+	decompress: An inverse of the above
+	ucompress: Compression with the compressor compressed too
+	pcompress: Compression with a general agreed prefix
+	pdecompress: Decompression with the same prefix (but the prefix must be compressed)
+	serve: A general static web server
+	downloads: A download server
+	app: An express app with many useful handlers
+	pack: A packed expression producer
+	minify: Minify JavaScript code
+	no: A utility to check defined
+	yes: A utility to fill undefined
+	getExtension: A file extension getter
+	blank: A no action callback filler
+	read: Sychronous file read
+	cache: Creates a cache of a function and file array
+	packServe: A simple packed file server (exports client (((p)(de))|(u))compress)
+	flush: A file cache flusher

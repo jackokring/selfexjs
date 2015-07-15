@@ -140,7 +140,7 @@ function compress(uncompressed) {
             result = "",
 	    k,
 	    last = 0,
-            dictSize = 0xD0;
+            dictSize = 0xF0 - 64;
         for (i = 0; i < dictSize; i += 1) {
             dictionary[String.fromCharCode(i)] = i;
         }
@@ -196,7 +196,7 @@ function decompress(compressed) {
             entry = "",
 	    last = 0,
 	    lmany = 0,
-            dictSize = 0xD0;
+            dictSize = 0xF0 - 64;
         for (i = 0; i < dictSize; i += 1) {
             dictionary[i] = String.fromCharCode(i);
         }
@@ -213,7 +213,7 @@ function decompress(compressed) {
             } else {
                 if (k === dictSize) {
                     entry = w + w.charAt(0);
-                }
+                } return "";
             }
  
             result += entry;
@@ -257,18 +257,21 @@ function ucompress(uncompressed) {
 	return compress(uncompressed);
 }
 
-//if you have a compressor gets better compression
-function pcompress(uncompressed) {
-	var c = compress(compress.toString()).length - 2;//perhaps last escaped entry differs
-	var d = ucompress(uncompressed);
+//gets better compression
+function pcompress(uncompressed, prefix) {
+	var c = compress(prefix).length - 2;//perhaps last escaped entry differs
+	var d = compress(prefix + uncompressed);
 	return d.substring(c, d.length);//get the compressed
 }
 
-//in the presance of a compressor gets decompression of better pcompress
-function pdecompress(compressed) {
-	var c = compress(compress.toString());
-	var d = c.substring(0, c.length - 2) + compressed;
-	return decompress(d);//redefines compress but what the hell
+//gets decompression of better pcompress
+//NB THIS FUNCTION USES A COMPRESSED PREFIX
+function pdecompress(compressed, cprefix) {
+	var z = decompress(compressed);
+	if(z === "") {
+		var d = cprefix.substring(0, c.length - 2) + compressed;
+		return decompress(d);//redefines compress but what the hell
+	} else return z;
 }
 
 var cfilename = ".comps.js";
@@ -359,6 +362,7 @@ function packServe(req, res, next) {
 	var args = {};
 	args.html = (getExtension(file) === "html")?true:false;
 	args.header = args.html;
+	args.comp = args.html;
 	var path = "." + req.path;
 	cachePage("cache/" + path, [path], args, function (res) {
 		res.send(res);
@@ -379,6 +383,7 @@ module.exports = {
 	minify: minify,
 	no: no,
 	yes: yes,
+	getExtension: getExtension,
 	blank: blank,
 	read: read,
 	cache: cache,
