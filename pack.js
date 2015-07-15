@@ -64,7 +64,7 @@ function yes(arg, init) {
 }
 
 function minify(arg) {
-	return ug.minify(arg, {
+	return ug.minify(arg.toString(), {
 		fromString: true,
 		mangle: true,
 		compress: {
@@ -216,7 +216,7 @@ function decompress(compressed) {
                 }
             }
  
-            result += entry
+            result += entry;
  
             // Add w+entry[0] to the dictionary.
             if(dictSize < 65536) dictionary[dictSize++] = w + entry.charAt(0);
@@ -251,15 +251,45 @@ function decompress(compressed) {
 	return decodeURIComponent(escape(w));
 }
 
+//adds a compressor
+function ucompress(uncompressed) {
+	uncompressed = compress.toString() + uncompressed;
+	return compress(uncompressed);
+}
+
+//if you have a compressor gets better compression
+function pcompress(uncompressed) {
+	var c = compress(compress.toString()).length - 2;//perhaps last escaped entry differs
+	var d = ucompress(uncompressed);
+	return d.substring(c, d.length);//get the compressed
+}
+
+//in the presance of a compressor gets decompression of better pcompress
+function pdecompress(compressed) {
+	var c = compress(compress.toString());
+	var d = c.substring(0, c.length - 2) + compressed;
+	return decompress(d);//redefines compress but what the hell
+}
+
+var cfilename = ".comps.js";
+var comps;
+
+cache([	function() {
+		//in main node directory
+		return pack(minify(compress) + minify(ucompress) + minify(pcompress) + minify(pdecompress), { html: false });
+	},
+	cfilename]);
+comps = read(cfilename);
+
 var filename = ".decomp.js";
 var decomp;
 
 cache([	function() {
 		//in main node directory
-		decomp = minify(decompress.toString()) + ";";
-		return decomp;
+		return minify(decompress);
 	},
 	filename]);
+decomp = read(filename);
 
 function pack(input, args) {
 	var html = true;
@@ -267,7 +297,7 @@ function pack(input, args) {
 		html = yes(args.html, html);
 	}
 	return (html)?('<script>document.write(decompress(\''+compress(input.toString())+'\'));</script>'):
-		('eval(decompress(\''+compress(minify(input.toString()))+'\'));');
+		('eval(decompress(\''+compress(minify(input))+'\'));');
 }
 
 //This function packs down editable scripts in the "editable" directory to compressed
@@ -294,12 +324,20 @@ function cachePage(fileTot, files, args, callback) {
 	var header = "";
 	var head = true;
 	var html = true;
+	var comp = false;
 	if(yes(args, false)) {
-		head = yes(args.head, true);
-		html = yes(args.html, true);
+		head = yes(args.head, head);
+		html = yes(args.html, html);
+		comp = yes(args.comp, comp);
 	}
-	if(head && html) header = "<script src='/"+filename+"'></script>";
-	if(head && !html) header = decomp;
+	if(head && html) {
+		header = "<script src='/"+filename+"'></script>";
+		if(comp) header += "<script src='/"+cfilename+"'></script>";
+	}
+	if(head && !html) {
+		header = decomp;
+		if(comp) header += comps;//add in compressor options
+	}
 	packCache(files, args,
 		function(res) {
 			cache([
@@ -329,6 +367,11 @@ function packServe(req, res, next) {
 
 module.exports = {
 	DEBUG: DEBUG,//true to clean cache
+	compress: compress,
+	decompress: decompress,
+	ucompress: ucompress,
+	pcompress: pcompress,
+	pdecompress: pdecompress;
 	serve: serve,
 	downloads: downloads,
 	app: app,

@@ -1,6 +1,6 @@
 {
   "name": "selfexjs",
-  "version": "5.0.1",
+  "version": "5.1.0",
   "description": "Creates self extracting JavaSscript.",
   "main": "pack.js",
   "scripts": {
