@@ -8,6 +8,22 @@ var favicon = require('serve-favicon');
 var statServ = require('serve-static');
 var logs = require('morgan');
 var less = require('less-middleware');
+var htmlMinLoad = require('html-minifier').minify;
+
+function htmlMin(arg) {
+	htmlMinLoad(arg, {
+		removeComments: true,
+		removeCommentsFromCDATA: true,
+		collapseWhitespace: true,
+		collapseBooleanAttributes: true,
+		removeRedundantAttributes: true,
+		useShortDoctype: true,
+		removeEmptyAttributes: true,
+		removeOptionalTags: true,
+		minifyJS: true,
+		minifyCSS: true
+	});
+}
 
 // Serve a download folder
 function downloads(folder) {
@@ -299,7 +315,7 @@ function pack(input, args) {
 	if(yes(args, false)) {
 		html = yes(args.html, html);
 	}
-	return (html)?('<script>document.write(decompress(\''+compress(input.toString())+'\'));</script>'):
+	return (html)?('<script>document.write(decompress(\''+compress(htmlMin(input.toString()))+'\'));</script>'):
 		('eval(decompress(\''+compress(minify(input))+'\'));');
 }
 
@@ -333,9 +349,10 @@ function cachePage(fileTot, files, args, callback) {
 		html = yes(args.html, html);
 		comp = yes(args.comp, comp);
 	}
+	if(head) header += jsLoad;
 	if(head && html) {
-		header = "<script src='/"+filename+"'></script>";
-		if(comp) header += "<script src='/"+cfilename+"'></script>";
+		header += "<script defer src='/"+filename+"'></script>";
+		if(comp) header += "<script defer src='/"+cfilename+"'></script>";
 	}
 	if(head && !html) {
 		header = decomp;
@@ -357,9 +374,20 @@ function getExtension(filename) {
     return filename.split('.').pop();
 }
 
-function packServe(req, res, next) {
+var mainArgs;
+var jsLoad = "";
+
+function packServe(js, args) {
+	if(!no(js)) for(i = 0; i < js.length; i++) {
+		jsLoad += "<script defer src='/"+js[i]+"'></script>";
+	}
+	mainArgs = yes(args, {});
+	return packServeLoad;
+}
+
+function packServeLoad(req, res, next) {
 	var file = req.path;
-	var args = {};
+	var args = mainArgs;
 	args.html = (getExtension(file) === "html")?true:false;
 	args.header = args.html;
 	args.comp = args.html;
