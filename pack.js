@@ -388,11 +388,12 @@ function packServe(js, args) {
 function packServeLoad(req, res, next) {
 	var file = req.path;
 	var args = mainArgs;
-	args.html = (getExtension(file) === "html")?true:false;
-	args.header = args.html;
-	args.comp = args.html;
+	args.html = yes(args.html, (getExtension(file) === "html")?true:false);
+	args.head = yes(args.head, args.html);
+	args.comp = yes(args.comp, args.html);
 	var path = "." + req.path;
 	cachePage("cache/" + path, [path], args, function (res) {
+		if(!args.html) res.set('Content-Type', 'application/javascript');
 		res.send(res);
 	});
 }
