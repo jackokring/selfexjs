@@ -75,10 +75,6 @@ function no(arg) {
 	return typeof arg === 'undefined';
 }
 
-function yes(arg, init) {
-	return (no(arg))?init:arg;
-}
-
 function minify(arg) {
 	return ug.minify(arg.toString(), {
 		fromString: true,
@@ -104,7 +100,7 @@ var blank = function() { return ""; };//do nothing;
 function cache(file, args, callback2) { 
 	if(no(callback2)) {
 		callback2 = args;
-		args = {};
+		args = defaults();
 	}
 	var fn = blank;
 	if(no(callback2)) callback2 = blank;
@@ -116,7 +112,7 @@ function cache(file, args, callback2) {
 				callback(null, memo);
 				return;
 			}
-			if(DEBUG) flush(item);
+			if(DEBUG || args.debug) flush(item);
 			fs.readFile(item, { encoding: 'utf8' },
 				function(err, data) {
 					if(!err) {
@@ -297,8 +293,9 @@ cache([	function() {
 		//in main node directory
 		return pack(minify(compress) + minify(ucompress) + minify(pcompress) + minify(pdecompress), { html: false });
 	},
-	cfilename]);
-comps = read(cfilename);
+	cfilename], function() {
+			comps = read(cfilename);
+	});
 
 var filename = ".decomp.js";
 var decomp;
@@ -307,15 +304,12 @@ cache([	function() {
 		//in main node directory
 		return minify(decompress);
 	},
-	filename]);
-decomp = read(filename);
+	filename], function() {
+			decomp = read(filename);
+	});
 
 function pack(input, args) {
-	var html = true;
-	if(yes(args, false)) {
-		html = yes(args.html, html);
-	}
-	return (html)?('<script>document.write(decompress(\''+compress(htmlMin(input.toString()))+'\'));</script>'):
+	return (args.html)?('<script>document.write(decompress(\''+compress(htmlMin(input.toString()))+'\'));</script>'):
 		('eval(decompress(\''+compress(minify(input))+'\'));');
 }
 
@@ -325,10 +319,11 @@ function packCache(files, args, callback) {
 	var decomp;
 	if(no(callback)) {
 		callback = args;
-		args = {};
+		args = defaults();
 	}
+	var context = args.editable;
 	files.unshift(function(item, args) {
-		return pack(read("editable/" + item), args);	
+		return pack(read(context + item), args);	
 	});
 	cache(files, args, function(res) {
 		callback(res);
@@ -338,30 +333,22 @@ function packCache(files, args, callback) {
 function cachePage(fileTot, files, args, callback) {
 	if(no(callback)) {
 		callback = args;
-		args = {};
+		args = defaults();
 	}
 	var header = "";
-	var head = true;
-	var html = true;
-	var comp = false;
-	if(yes(args, false)) {
-		head = yes(args.head, head);
-		html = yes(args.html, html);
-		comp = yes(args.comp, comp);
-	}
-	if(head) header += jsLoad;
-	if(head && html) {
+	if(args.head) header += args.jsLoad;
+	if(args.head && args.html) {
 		header += "<script defer src='/"+filename+"'></script>";
-		if(comp) header += "<script defer src='/"+cfilename+"'></script>";
+		if(args.comp) header += "<script defer src='/"+cfilename+"'></script>";
 	}
-	if(head && !html) {
+	if(args.head && !args.html) {
 		header = decomp;
-		if(comp) header += comps;//add in compressor options
+		if(args.comp) header += comps;//add in compressor options
 	}
 	packCache(files, args,
 		function(res) {
 			cache([
-				function(file, arg) {
+				function() {
 					return header + res;
 				},
 				//NB. escape and splice
@@ -374,25 +361,46 @@ function getExtension(filename) {
     return filename.split('.').pop();
 }
 
-var mainArgs;
-var jsLoad = "";
+var defaultArgs = {
+	html: true,//draws html not js
+	head: true,//puts a decompress head on and all the jsLoad file links
+	prefix: "cache/",//prefix to final cache to
+	editable: "editable/",//editable script location
+	comp: true,//send compression header too for client compress
+	jsLoad: "",//list of js files to include
+	debug: false //set to debug a particular packServe
+};
+
+function defaults() {
+	return defaultArgs;
+}
+
+function options(args) {
+	if(no(args)) return defaults();
+	var these = new defaultArgs;
+	for(i in args) {
+		these[i] = args[i];
+	}
+	return these;
+}
 
 function packServe(js, args) {
+	if(no(args)) args = js;
+	var jsLoad = "";
 	if(!no(js)) for(i = 0; i < js.length; i++) {
 		jsLoad += "<script defer src='/"+js[i]+"'></script>";
 	}
-	mainArgs = yes(args, {});
-	return packServeLoad;
+	var use = new packServeLoad; 
+	use.args = options(args);
+	use.args.jsLoad += jsLoad;
+	return use;
 }
 
 function packServeLoad(req, res, next) {
 	var file = req.path;
-	var args = mainArgs;
-	args.html = yes(args.html, (getExtension(file) === "html")?true:false);
-	args.head = yes(args.head, args.html);
-	args.comp = yes(args.comp, args.html);
-	var path = "." + req.path;
-	cachePage("cache/" + path, [path], args, function (res) {
+	var path = "." + req.path;//protect
+	var args = this.args;
+	cachePage(this.args.prefix + path, [path], this.args, function (res) {
 		if(!args.html) res.set('Content-Type', 'application/javascript');
 		res.send(res);
 	});
@@ -411,11 +419,12 @@ module.exports = {
 	pack: pack,
 	minify: minify,
 	no: no,
-	yes: yes,
 	getExtension: getExtension,
 	blank: blank,
 	read: read,
 	cache: cache,
 	packServe: packServe,
-	flush: flush
+	flush: flush,
+	options: options,
+	defaults: defaults
 }
